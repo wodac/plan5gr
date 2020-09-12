@@ -1,5 +1,6 @@
 export interface SyncMetadataType {
-    lastSynced: Date;
+    id: number;
+    lastRetrieved: Date;
     scheduleSyncToken: string;
     examsSyncToken: string;
 }

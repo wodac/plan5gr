@@ -3,7 +3,8 @@ import connection from '../db';
 import { SyncMetadataType } from './SyncMetadataType';
 
 class SyncMetadata extends Model<SyncMetadataType, SyncMetadataType> implements SyncMetadataType {
-    public lastSynced: Date;
+    public id: number;
+    public lastRetrieved: Date;
     public scheduleSyncToken: string;
     public examsSyncToken: string;
 
@@ -11,15 +12,22 @@ class SyncMetadata extends Model<SyncMetadataType, SyncMetadataType> implements 
         return SyncMetadata.findOne();
     }
 
-    static async setMetadata(data: SyncMetadataType) {
-        return SyncMetadata.update(data, {
-            where: {}
-        });
+    static async setMetadata(data: Partial<SyncMetadataType>) {
+        return SyncMetadata.upsert({
+                id: 0, lastRetrieved: new Date(), 
+                examsSyncToken: null, scheduleSyncToken: null,
+                ...data
+            }, 
+        {});
     }
 }
 
 SyncMetadata.init({
-    lastSynced: {
+    id: {
+        type: DataTypes.SMALLINT,
+        primaryKey: true
+    },
+    lastRetrieved: {
         type: DataTypes.DATE
     },
     scheduleSyncToken: {
@@ -32,4 +40,4 @@ SyncMetadata.init({
     sequelize: connection
 });
 
-module.exports = SyncMetadata;
+export default SyncMetadata;
