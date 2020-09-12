@@ -4,7 +4,7 @@
  * Module dependencies.
  */
 
-var app = require('../build/app');
+var app = require('../dist/app');
 var debug = require('debug')('plan-5gr-node:server');
 var http = require('http');
 

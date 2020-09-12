@@ -1,8 +1,24 @@
 import { Sequelize, Model, DataTypes } from 'sequelize';
-const connection = require('../db')
+import connection from '../db';
 
+interface ScheduleEventType {
+    id: string,
+    name: string,
+    startTime: Date,
+    endTime: Date,
+    kind: 'schedule' | 'exams',
+    data: any
+}
 
-class ScheduleEvent extends Model {
+class ScheduleEvent extends Model<ScheduleEventType, ScheduleEventType> 
+implements ScheduleEventType {
+    public id: string;
+    public name: string;
+    public startTime: Date;
+    public endTime: Date;
+    public kind: 'schedule' | 'exams';
+    public data: any;
+
     static async syncWithGoogle() {
         const Metadata = require('./SyncMetadata');
         const metadata = await Metadata.getMetadata();
@@ -12,6 +28,11 @@ class ScheduleEvent extends Model {
 }
 
 ScheduleEvent.init({
+    id: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        primaryKey: true
+    },
     name: {
         type: DataTypes.STRING,
         allowNull: false
