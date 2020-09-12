@@ -2,9 +2,6 @@ const { Sequelize, Model, DataTypes } = require('sequelize');
 const connection = require('../db')
 
 class ScheduleEvent extends Model {
-    getData() {
-        return JSON.parse(this.data);
-    }
 }
 
 ScheduleEvent.init({
@@ -26,7 +23,14 @@ ScheduleEvent.init({
     },
     data: {
         type: DataTypes.TEXT,
-        allowNull: false
+        allowNull: false,
+        get() {
+            const json = this.getDataValue('data');
+            return JSON.parse(json);
+        },
+        set(data) {
+            this.setDataValue('data', JSON.stringify(data));
+        }
     }
 }, {
     sequelize: connection
