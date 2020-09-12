@@ -1,7 +1,14 @@
-const { Sequelize, Model, DataTypes } = require('sequelize');
+import { Sequelize, Model, DataTypes } from 'sequelize';
 const connection = require('../db')
 
+
 class ScheduleEvent extends Model {
+    static async syncWithGoogle() {
+        const Metadata = require('./SyncMetadata');
+        const metadata = await Metadata.getMetadata();
+
+        
+    }
 }
 
 ScheduleEvent.init({
