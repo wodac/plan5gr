@@ -12,15 +12,17 @@ app.use(express.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 type EventQueryType = {
-  from: string,
-  to: string
+  timeMin: string,
+  timeMax: string
 }
 
 app.get<EventQueryType, any, any, EventQueryType>('/events', async (req, res) => {
   try {
-    const { from, to } = req.query;
-    const events = await ScheduleEvent.getEvents(new Date(from), new Date(to));
-    res.send(events.map(ev => ev.data));
+    const { timeMin, timeMax } = req.query;
+    const events = await ScheduleEvent.getEvents(new Date(timeMin), new Date(timeMax));
+    const schedule = events.filter(ev => ev.kind === 'schedule').map(ev => ev.data);
+    const exams = events.filter(ev => ev.kind === 'exams').map(ev => ev.data);
+    res.send({ schedule, exams });
   } catch (err) {
     res.status(400);
     res.send({error: 'Bad request'})

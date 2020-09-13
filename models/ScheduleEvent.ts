@@ -1,12 +1,12 @@
 import { Sequelize, Model, DataTypes, Op } from 'sequelize';
 import calendarSync from '../calendarSync';
-import { CalendarEvent } from '../CalendarTime';
 import connection from '../db';
+import { processCalendarEvent } from './processEvents';
 import SyncMetadata from './SyncMetadata';
 
-type ScheduleKind = 'schedule' | 'exams';
+export type ScheduleKind = 'schedule' | 'exams';
 
-interface ScheduleEventType {
+export interface ScheduleEventType {
     id: string,
     name: string,
     startTime: Date,
@@ -15,27 +15,8 @@ interface ScheduleEventType {
     data: any
 }
 
-function processCalendarEvent(event: CalendarEvent, kind: ScheduleKind): ScheduleEventType {
-    const {start, end} = event;
-    const allDay = typeof start.date === 'string';
-    let startTime, endTime;
-    if (allDay) {
-        startTime = new Date(start.date);
-        endTime = new Date(end.date);
-    } else {
-        startTime = new Date(start.dateTime);
-        endTime = new Date(end.dateTime);
-    }
-    return {
-        id: event.id,
-        name: event.summary,
-        startTime, endTime, kind,
-        data: event
-    }
-}
-
-class ScheduleEvent extends Model<ScheduleEventType, ScheduleEventType> 
-implements ScheduleEventType {
+class ScheduleEvent extends Model<ScheduleEventType, ScheduleEventType>
+    implements ScheduleEventType {
     public id: string;
     public name: string;
     public startTime: Date;
@@ -46,7 +27,7 @@ implements ScheduleEventType {
     static async syncWithGoogle() {
         const metadata = await SyncMetadata.getMetadata();
         const syncedEvents = await calendarSync(metadata);
-        
+
         ScheduleEvent.bulkCreate(
             syncedEvents.schedule.added.map(ev => processCalendarEvent(ev, 'schedule'))
         );
@@ -60,7 +41,7 @@ implements ScheduleEventType {
         syncedEvents.exams.modified.forEach((event) => {
             ScheduleEvent.upsert(processCalendarEvent(event, 'exams'));
         });
-        
+
         ScheduleEvent.destroy({
             where: {
                 id: syncedEvents.schedule.cancelled.map(ev => ev.id).concat(
@@ -80,15 +61,23 @@ implements ScheduleEventType {
     static async getEvents(from: Date, to: Date) {
         if (to < from) throw RangeError("'From' date should be before 'to' date!");
         if ((to.valueOf() - from.valueOf()) > 1000 * 60 * 60 * 24 * 90) throw RangeError("Date range should be below 90 days!");
-        return ScheduleEvent.findAll({ 
-            where: { 
-                startTime: { 
-                    [Op.gt]: from 
-                }, 
-                endTime: { 
-                    [Op.lt]: to 
-                } 
-            } 
+        return ScheduleEvent.findAll({
+            where: {
+                [Op.or]: [
+                    {
+                        startTime: {
+                            [Op.gt]: from,
+                            [Op.lt]: to
+                        }
+                    },
+                    {
+                        endTime: {
+                            [Op.gt]: from,
+                            [Op.lt]: to
+                        }
+                    }
+                ]
+            }
         })
     }
 }
